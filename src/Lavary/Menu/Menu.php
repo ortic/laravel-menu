@@ -26,24 +26,32 @@ class Menu {
 	 * @param  callable  $callback
 	 * @return \Lavary\Menu\Menu
 	 */
-	public function make($name, $callback)
-	{
-		if(is_callable($callback))
-		{
-			$menu = new Builder($name, $this->loadConf($name));
-			
-			// Registering the items
-			call_user_func($callback, $menu);
-			
-			// Storing each menu instance in the collection
-			$this->collection->put($name, $menu);
-			
-			// Make the instance available in all views
-			\View::share($name, $menu);
+    public function make($name, $callback)
+    {
+        if(is_callable($callback))
+        {
+            $keyName = "lavary-" . $name;
+            if (Cache::has($keyName)) {
+                $menu = Cache::get($keyName);
+            }
+            else {
+                $menu = new Builder($name, $this->loadConf($name));
 
-			return $menu;
-		}
-	}
+                // Registering the items
+                call_user_func($callback, $menu);
+
+                Cache::put($keyName, $menu, 120);
+            }
+
+            // Storing each menu instance in the collection
+            $this->collection->put($name, $menu);
+
+            // Make the instance available in all views
+            \View::share($name, $menu);
+
+            return $menu;
+        }
+    }
 
 	/**
 	 * Loads and merges configuration data
